@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebulas Alias</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <script src="libs/nebulas.js"></script>
+    <script>
+        "use strict";
+        const CHAIN_ID = 1001;
+        const CONTRACT_ADDR = "n1i5E2GENt8ErPAE22QFELT9LrucEuBn773";
+
+        var nebulas = require('nebulas');
+        var neb = new nebulas.Neb();
+        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+
+        var Account = nebulas.Account;
+        var Transaction = neb.Transaction;
+        var api = neb.api;
+        var admin = neb.admin;
+
+        var sAccount;
+
+        var nonce = 0;
+
+        function unlockKeyStore() {
+            var file = document.getElementById('fileSelector').files[0];
+            var fileReader = new FileReader();
+            fileReader.onload = function (ev) {
+                var result = ev.target.result;
+                var parse = JSON.parse(result);
+
+                console.log(result);
+                var address = parse.address;
+                console.log((parse.address));
+                $("#address").text(address);
+
+                var account = new Account();
+                var password = document.getElementById('passphrase').value;
+                account.fromKey(parse, password, false);
+                sAccount = account;
+
+                api.getAccountState(address)
+                    .then(function (resp) {
+                        console.log(resp);
+                        $("#balance").text(resp.balance);
+                        nonce = parseInt(resp.nonce);
+                    })
+                    .catch(function (reason) {
+                        console.log(reason)
+                    });
+            };
+            fileReader.readAsText(file);
+        }
+
+        function queryByAlias() {
+            var alias = $("#queryAlias").val();
+            api.call({
+                from: sAccount.getAddressString(),
+                to: CONTRACT_ADDR,
+                value: 0,
+                nonce: 1,
+                gasPrice: 1000000,
+                gasLimit: 2000000,
+                contract: {function: 'queryAlias', args: '["' + alias + '"]'}
+            })
+                .then(function (resp) {
+                    console.log("succ");
+                    $("#result_queryAlias").text(resp.result);
+                })
+                .catch(function (err) {
+                    console.log(err);
+                    $("#result_queryAlias").text(resp);
+                });
+        }
+
+        function queryByAddress() {
+            var address = $("#queryAddress").val();
+            api.call({
+                from: sAccount.getAddressString(),
+                to: CONTRACT_ADDR,
+                value: 0,
+                nonce: 1,
+                gasPrice: 1000000,
+                gasLimit: 2000000,
+                contract: {function: 'queryByAddress', args: '["' + address + '"]'}
+            })
+                .then(function (resp) {
+                    console.log("succ", resp);
+                    $("#result_queryAddress").text(resp.result);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    $("#result_queryAddress").text(error);
+                })
+        }
+
+        function register() {
+            var alias = $("#registerAlias").val();
+
+            var tx = new nebulas.Transaction({
+                chainID: CHAIN_ID,
+                from: sAccount,
+                to: CONTRACT_ADDR,
+                value: 0,
+                nonce: nonce + 1,
+                gasPrice: 1000000,
+                gasLimit: 2000000,
+                contract: {function: 'register', args: '["' + alias + '","' + alias + '"]'} // owner , alias
+            });
+
+            tx.signTransaction();
+
+            api.sendRawTransaction(tx.toProtoString())
+                .then(function (resp) {
+                    console.log(JSON.stringify(resp));
+                    $("#result_register").text("register ok");
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    $("#result_register").text(err);
+                });
+        }
+    </script>
+</head>
+<body background="img/background.png">
+
+<div class="form-wallet">
+    <input type="file" id="fileSelector" name="file">
+    <input type="password" name="password" id="passphrase" value="nebulas2018"/>
+    <button type="button" onclick="unlockKeyStore()">unlock</button>
+</div>
+
+<hr/>
+<div>
+    <p>Wallet Address</p>
+    <span id="address">address</span>
+    <div>
+        <p>balance</p>
+        <span id="balance"></span>
+    </div>
+</div>
+
+<hr/>
+
+<div>
+    <p>query alias</p>
+    <input type="text" id="queryAlias">
+    <button onclick="queryByAlias()">query</button>
+
+    <p>query result</p>
+    <span id="result_queryAlias"></span>
+</div>
+
+<hr/>
+<div>
+    <p>query address</p>
+    <input type="text" id="queryAddress">
+    <button onclick="queryByAddress()">query</button>
+
+    <p>result </p>
+    <span id="result_queryAddress"></span>
+</div>
+<hr/>
+<div>
+    <p>register your alias</p>
+    <input type="text" id="registerAlias">
+    <button onclick="register()">register</button>
+
+    <p>result</p>
+    <span id="result_register"></span>
+</div>
+</body>
+</html>
