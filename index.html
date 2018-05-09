@@ -7,13 +7,13 @@
     <script src="libs/nebulas.js"></script>
     <script>
         "use strict";
-        const CHAIN_ID = 1001;
-        const TX_HASH = "93e7e1b35f065f500906102b706d73b14ef04ab4ef821a61b0fa724540ef4cd2";
-        const CONTRACT_ADDR = "n1xYx88UEyPePrvgCGu3uJzgPjqJDcQBHWa";
+        const CHAIN_ID = 1;
+        const TX_HASH = "6c5b55e2bc6786dc8b6916f925c83d046cd77934d4624a2046dbeff3e14a9ede";
+        const CONTRACT_ADDR = "n1y62eeh6koSVGJj5RJU2WYjy91xUxpavXD";
 
         var nebulas = require('nebulas');
         var neb = new nebulas.Neb();
-        neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+        neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"));
 
         var Account = nebulas.Account;
         var Transaction = neb.Transaction;
